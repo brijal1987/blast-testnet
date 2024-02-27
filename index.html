@@ -1,116 +1,146 @@
+<html>
+<title>Blass Telnet demo</title>
+<head>
+  <script src="/node_modules/@metamask/sdk/dist/browser/iife/metamask-sdk.js"></script>
+  <script src="/node_modules/web3/dist/web3.min.js"></script>
+  <style>
+    .container {
+      display: flex;
+      flex-direction: row;
+      padding: 0 10 10 0;
+    }
+    button {
+      width: 10%;
+    background-color: #04AA6D; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin-right: 20px;
+  }
+  </style>
+</head>
+<body>
+  <div class="container">
+  <button onclick="connect()">Connect</button>
+  <button style="display: none;" id="blast" onclick="blast()">Blast</button>
+</div>
+  <h1 id="ethWallet"></h1>
+  <h2 id="blastDiv"></h2>
+  <script>
+    try {
+      const sdk = new MetaMaskSDK.MetaMaskSDK({
+        dappMetadata: {
+          name: "Pure JS example",
+          url: `http://${window.location.host}`,
+        },
+        logging: {
+          sdk: false,
+        }
+      });
+    } catch (e) {
+      document.getElementById('ethWallet').innerHTML = "Eth wallet is not connected yet, Please connect"
+    }
+    function connect() {
+      const wallet = getWallet().then(wallet => {
+        if(wallet) {
+          document.getElementById('blast').style = "display:block"
+          return wallet
+        } else {
+          document.getElementById('blast').style = "display:none"
+        }
+      });
+    }
+    function getWallet() {
+      return ethereum
+        .request({
+          method: 'eth_requestAccounts',
+          params: [],
+        })
+        .then((res) => {
+          console.log('request accounts', res)
+          document.getElementById('ethWallet').innerHTML = `Eth wallet is connected, wallet: ${res}`
+          return res;
+        })
+        .catch((e) => {
+          console.log('request accounts ERR', e)
+          document.getElementById('ethWallet').innerHTML = `Error connecting Eth wallet, error: ${e}`
+          return 0
+      });
+    }
+    const _abi = [
+        {
+          "inputs": [],
+          "name": "text",
+          "outputs": [
+            {
+              "internalType": "string",
+              "name": "",
+              "type": "string"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "constant": true
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "string",
+              "name": "_text",
+              "type": "string"
+            }
+          ],
+          "name": "set",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "ping",
+          "outputs": [
+            {
+              "internalType": "string",
+              "name": "",
+              "type": "string"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "constant": true
+        }
+      ];
 
-<button onclick="connect()">Connect</button>
-<button style="display: none;" id="blast" onclick="blast()">Blast</button>
-<h1 id="ethWallet"></h1>
-<h2></h2>
-<script src="/node_modules/@metamask/sdk/dist/browser/iife/metamask-sdk.js"></script>
-<script src="/node_modules/web3/dist/web3.min.js"></script>
-<script>
-
-  console.log('window.location.host', window.location.host)
-  try {
-    const sdk = new MetaMaskSDK.MetaMaskSDK({
-      dappMetadata: {
-        name: "Pure JS example",
-        url: `http://${window.location.host}`,
-      },
-      logging: {
-        sdk: false,
+    function blast() {
+      const web3 = new Web3('https://sepolia.blast.io');
+      const contractAddress = '0x4300000000000000000000000000000000000002';
+      const amount = 1;
+      try{
+        getWallet().then(wallet => {
+          const walletadress = wallet[0]
+          console.log('wallet', walletadress)
+          const contract = new web3.eth.Contract(_abi, contractAddress)
+          const amountWei = web3.utils.toWei(amount.toString(), 'ether');
+          contract.methods.claimYields().send({ from: walletadress })
+            .then(() => {
+              document.getElementById('blastDiv').innerHTML = `Claimed yeild`
+              console.log(`Claimed yeild`)
+            });
+          // Send transaction to stake ETH
+          contract.methods.stake(amountWei).send({ from: walletadress, value: amountWei })
+              .then(() => {
+                document.getElementById('blastDiv').innerHTML += `\n${amount} has been stacked`
+                console.log(`${amount} has been stacked`)
+              });
+          });
+      } catch(e) {
+        document.getElementById('blastDiv').innerHTML = `Something went wrong: error: ${e}`
       }
-    });
-  } catch (e) {
-    document.getElementById('ethWallet').innerHTML = "Eth wallet is not connected yet, Please connect"
-  }
-  function connect() {
-    const wallet = getWallet().then(wallet => {
-      if(wallet) {
-        document.getElementById('blast').style = "display:block"
-        return wallet
-      } else {
-        document.getElementById('blast').style = "display:none"
-      }
-    });
-  }
-  function getWallet() {
-    return ethereum
-      .request({
-        method: 'eth_requestAccounts',
-        params: [],
-      })
-      .then((res) => {
-        console.log('request accounts', res)
-        document.getElementById('ethWallet').innerHTML = `Eth wallet is connected, wallet: ${res}`
-        return res;
-      })
-      .catch((e) => {
-        console.log('request accounts ERR', e)
-        document.getElementById('ethWallet').innerHTML = `Error connecting Eth wallet, error: ${e}`
-        return 0
-    });
-  }
-  const _abi = [
-      {
-        "inputs": [],
-        "name": "text",
-        "outputs": [
-          {
-            "internalType": "string",
-            "name": "",
-            "type": "string"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function",
-        "constant": true
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "string",
-            "name": "_text",
-            "type": "string"
-          }
-        ],
-        "name": "set",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "ping",
-        "outputs": [
-          {
-            "internalType": "string",
-            "name": "",
-            "type": "string"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function",
-        "constant": true
-      }
-    ];
-
-  function blast() {
-    const web3 = new Web3('https://sepolia.blast.io');
-    const contractAddress = '0x4300000000000000000000000000000000000002';
-    const amount = 1;
-    getWallet().then(wallet => {
-      const walletadress = wallet[0]
-      console.log('wallet', walletadress)
-      const contract = new web3.eth.Contract(_abi, contractAddress)
-      const amountWei = web3.utils.toWei(amount.toString(), 'ether');
-      contract.methods.claimYields().send({ from: walletadress })
-        .then(() => {
-          console.log(`Claimed yeild`)
-        });
-      // Send transaction to stake ETH
-      contract.methods.stake(amountWei).send({ from: walletadress, value: amountWei })
-        .then(() => {
-          console.log(`${amount} has been stacked`)
-        });
-    });
-
-  }
-</script>
+    }
+  </script>
+</body>
+</html>
