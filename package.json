@@ -1,0 +1,23 @@
+{
+    "name": "blast-telnet",
+    "version": "1.0.0",
+    "private": true,
+    "description": "An example use of the blast using telnet",
+    "repository": {
+        "type": "git"
+    },
+    "license": "ISC",
+    "main": "src/index.js",
+    "files": [
+        "dist/"
+    ],
+    "scripts": {
+        "start": "serve .",
+        "allow-scripts": "echo 'n/a'"
+    },
+    "dependencies": {
+        "@metamask/sdk": "^0.12.2",
+        "serve": "13.0.2",
+        "web3": "^4.5.0"
+    }
+}
